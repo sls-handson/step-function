@@ -1,0 +1,54 @@
+service: ${opt:no}-sls-handson-step-functions
+ 
+provider:
+  name: aws
+  runtime: java8
+  timeout: 90
+  profile: sls-handson
+  role: 'arn:aws:iam::184619842885:role/RoleSlsHandson2017'
+
+plugins:
+  - serverless-step-functions
+
+functions:
+  faceDetectionFunc:
+    handler: org.springframework.cloud.function.adapter.aws.SpringBootStreamHandler
+  faceIndexFunc:
+    handler: org.springframework.cloud.function.adapter.aws.SpringBootStreamHandler
+  thumbnailFunc:
+    handler: org.springframework.cloud.function.adapter.aws.SpringBootStreamHandler
+  persistMetadataFunc:
+    handler: org.springframework.cloud.function.adapter.aws.SpringBootStreamHandler
+
+stepFunctions:
+  stateMachines:
+    slsHandsonMachine:
+      definition:
+        Comment: Serverless Framework Handson Step Function
+        StartAt: FaceDetection
+        States:
+          FaceDetection:
+            Type: Task
+            Resource: arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${opt:no}-face-detection-${opt:stage}-put
+            Next: Parallel
+          Parallel:
+            Type: Parallel
+            Next: PersistMetadata
+            Branches:
+            - StartAt: FaceIndex
+              States:
+                FaceIndex:
+                  Type: Task
+                  Resource: arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${opt:no}-face-index-${opt:stage}-put
+                  End: true
+            - StartAt: Thumbnail
+              States:
+                Thumbnail:
+                  Type: Task
+                  Resource: arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${opt:no}-thumbnail-${opt:stage}-put
+                  End: true
+          PersistMetadata:
+            Type: Task
+            Resource: arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${opt:no}-persist-metadata-${opt:stage}-put
+            End: true
+

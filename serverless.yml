@@ -9,16 +9,24 @@ provider:
 
 plugins:
   - serverless-step-functions
+  - serverless-pseudo-parameters
+
+package:
+  individually: true
+  exclude:
+    - "**"
 
 functions:
   faceDetectionFunc:
     handler: org.springframework.cloud.function.adapter.aws.SpringBootStreamHandler
+    package:
+      include:
+        - ../face-detection/target/aws-spring-cloud-function-maven-dev-aws.jar
   faceIndexFunc:
     handler: org.springframework.cloud.function.adapter.aws.SpringBootStreamHandler
-  thumbnailFunc:
-    handler: org.springframework.cloud.function.adapter.aws.SpringBootStreamHandler
-  persistMetadataFunc:
-    handler: org.springframework.cloud.function.adapter.aws.SpringBootStreamHandler
+    package:
+      include:
+        - ../face-index/target/aws-spring-cloud-function-maven-dev-aws.jar
 
 stepFunctions:
   stateMachines:
@@ -29,26 +37,10 @@ stepFunctions:
         States:
           FaceDetection:
             Type: Task
-            Resource: arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${opt:no}-face-detection-${opt:stage}-put
-            Next: Parallel
-          Parallel:
-            Type: Parallel
-            Next: PersistMetadata
-            Branches:
-            - StartAt: FaceIndex
-              States:
-                FaceIndex:
-                  Type: Task
-                  Resource: arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${opt:no}-face-index-${opt:stage}-put
-                  End: true
-            - StartAt: Thumbnail
-              States:
-                Thumbnail:
-                  Type: Task
-                  Resource: arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${opt:no}-thumbnail-${opt:stage}-put
-                  End: true
-          PersistMetadata:
+            Resource: arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${opt:no}-sls-handson-step-functions-${opt:stage}-faceDetectionFunc
+            Next: FaceIndex
+          FaceIndex:
             Type: Task
-            Resource: arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${opt:no}-persist-metadata-${opt:stage}-put
+            Resource: arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${opt:no}-sls-handson-step-functions-${opt:stage}-faceIndexFunc
             End: true
 

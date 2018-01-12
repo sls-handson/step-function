@@ -11,8 +11,13 @@ npm install serverless-pseudo-parameters
 sls deploy --no a001
 ```
 
-#remove
+# remove
 
 ```
 sls remove --no a001
+```
+# invoke
+
+```
+sls invoke stepf --name slsHandsonMachine -p event.json --no a001
 ```
